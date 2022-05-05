@@ -40,6 +40,7 @@ dependencies {
     //projects
     shadow 'eu.automateeverything:data:0.1'
     shadow 'eu.automateeverything:domain:0.1'
+    shadow 'eu.automateeverything:interop:0.1'
 
     //pf4j
     shadow "org.pf4j:pf4j:$pf4jVersion"
