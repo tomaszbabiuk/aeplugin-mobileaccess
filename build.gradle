@@ -1,0 +1,72 @@
+buildscript {
+    apply from: "../automate-everything/versions.gradle"
+
+    repositories {
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath 'gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0'
+    }
+}
+
+apply plugin: "org.jetbrains.kotlin.jvm"
+apply plugin: "org.jetbrains.kotlin.kapt"
+apply plugin: 'com.github.johnrengelman.shadow'
+
+group = 'eu.automateeverything'
+version = '0.1.0'
+ext.pluginsDir = '../automate-everything/output/plugins'
+
+repositories {
+    mavenCentral()
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = '11'
+}
+
+jar {
+    manifest {
+        attributes 'Plugin-Class': "eu.automateeverything.mobileaccessplugin.MobileAccessPlugin",
+                'Plugin-Id': "mobileaccess",
+                'Plugin-Version': "0.1.0",
+                'Plugin-Provider': "Tomasz Babiuk",
+                'Plugin-Dependencies': ""
+    }
+}
+
+dependencies {
+    //projects
+    shadow 'eu.automateeverything:data:0.1'
+    shadow 'eu.automateeverything:domain:0.1'
+
+    //pf4j
+    shadow "org.pf4j:pf4j:$pf4jVersion"
+    kapt "org.pf4j:pf4j:$pf4jVersion"
+    annotationProcessor "org.pf4j:pf4j:$pf4jVersion"
+
+    //kotlin
+    shadow "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    shadow "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
+
+    //crypto
+    implementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni:2.0.2'
+
+    //mqtt
+    implementation 'com.hivemq:hivemq-mqtt-client:1.3.0'
+}
+
+task buildForAutomateEverything(type: Copy) {
+    from shadowJar
+    into pluginsDir
+}
+
+shadowJar {
+    exclude 'kotlin/**'
+    exclude 'org/intellij/**'
+    exclude 'org/jetbrains/**'
+    exclude 'org/slf4j/**'
+    exclude 'org/pf4j/**'
+    exclude 'com/google/gson/**'
+}
