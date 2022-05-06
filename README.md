@@ -1,6 +1,6 @@
-# This is a plugin for Automate-Everything. Allows to control devices from an Android mobile phone. The connection is secured by SaltChannel.
+# Welcome
 
-This is a plugin for [Automate-Everything](https://github.com/tomaszbabiuk/automate-everything)
+This is a plugin for [Automate-Everything](https://github.com/tomaszbabiuk/automate-everything). It allows controlling devices from an Android mobile phone over the internet. The connection is secured by SaltChannel.
 
 # Directory setup
 ```bash
