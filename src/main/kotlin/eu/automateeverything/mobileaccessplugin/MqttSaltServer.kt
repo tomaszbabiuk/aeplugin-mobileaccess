@@ -89,7 +89,7 @@ class MqttSaltServer(
 
         connectionState = ConnectionState.Connecting
         try {
-            logger.info("Connecting to: $brokerAddress")
+            logger.info("Connecting to: ${brokerAddress.host}")
 
             if (brokerAddress.user.isNotEmpty() && brokerAddress.password.isNotEmpty()) {
                 client.connectWith()
@@ -249,6 +249,7 @@ class MqttSaltServer(
                     logger.error("Unhandled exception while handling subscriptions", ex)
                 }
             }
+            println("NOT WORKING!")
         }
 
         private suspend fun serverLoop() = coroutineScope {
@@ -291,12 +292,16 @@ class MqttSaltServer(
             session = SaltServerSession(signKeyPair, channel)
             session.setEncKeyPair(random)
             serverMasterJob = scope.async {
-                serverLoop()
+                while (true) {
+                    logger.info("Restarting server loop")
+                    serverLoop()
+                    delay(1000)
+                }
             }
         }
     }
 
-    inner class ConnectorContext(val keyPair: KeyPair, private val scope: CoroutineScope) {
+    inner class ConnectorContext(private val keyPair: KeyPair, private val scope: CoroutineScope) {
         private val sessions = LinkedHashMap<String, SingleSessionContext>()
 
         init {
