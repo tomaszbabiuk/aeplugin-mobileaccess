@@ -92,6 +92,7 @@ class MqttSaltServer(
             logger.info("Connecting to: ${brokerAddress.host}")
 
             if (brokerAddress.user.isNotEmpty() && brokerAddress.password.isNotEmpty()) {
+                logger.info(" Initial connection")
                 client.connectWith()
                     .simpleAuth()
                     .username(brokerAddress.user)
@@ -99,6 +100,7 @@ class MqttSaltServer(
                     .applySimpleAuth()
                     .send()
             } else {
+                logger.info("  Reconnection")
                 client.connectWith().send()
             }
 
@@ -137,7 +139,9 @@ class MqttSaltServer(
 
             try {
                 if (connectionState == ConnectionState.Disconnected) {
-                    connect()
+                    withTimeout(10000) {
+                        connect()
+                    }
                 }
 
                 if (connectionState == ConnectionState.Disconnected && lastConnectionState) {
