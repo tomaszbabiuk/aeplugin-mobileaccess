@@ -56,11 +56,19 @@ dependencies {
 
     //mqtt
     implementation 'com.hivemq:hivemq-mqtt-client:1.3.0'
+
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
+
 }
 
 task buildForAutomateEverything(type: Copy) {
     from shadowJar
     into pluginsDir
+}
+
+test {
+    useJUnitPlatform()
 }
 
 shadowJar {

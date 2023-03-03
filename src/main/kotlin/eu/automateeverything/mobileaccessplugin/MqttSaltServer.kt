@@ -26,6 +26,7 @@ import eu.automateeverything.interop.ByteArraySessionHandler
 import eu.automateeverything.interop.SubscriptionHandler
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
+import saltchannel.CryptoLib
 import saltchannel.util.Hex
 import saltchannel.util.KeyPair
 import saltchannel.util.Rand
@@ -237,7 +238,7 @@ class MqttSaltServer(
         }
 
         private var session: SaltServerSession
-        private var channel: QueuedCancellableByteChannel
+        private var channel: QueuedByteChannel
         private val sessionCancellationToken = AtomicBoolean(false)
         private var serverMasterJob: Deferred<Unit>
         private var subscriptionJob: Deferred<Unit>? = null
@@ -250,7 +251,7 @@ class MqttSaltServer(
                 try {
                     val responses = sessionHandler.handleSubscriptions(subscriptions)
                     if (responses != null) {
-                        session.channel.write(false, responses)
+                        session.channel!!.write(false, responses)
                     }
                 } catch (ex: Exception) {
                     logger.error("Unhandled exception while handling subscriptions", ex)
@@ -263,19 +264,19 @@ class MqttSaltServer(
             try {
                 session.handshake()
 
-                channelActivator.activateChannel(signKeyPair.pub(), session.clientSigKey)
+                channelActivator.activateChannel(signKeyPair.pub(), session.clientSigKey!!)
 
                 subscriptionJob = async {
                     subscriptionsLoop()
                 }
 
                 while (isActive && !sessionCancellationToken.get()) {
-                    val incomingData = session.channel.read()
+                    val incomingData = session.channel!!.read()
                     logger.debug("Incoming session data ${incomingData.toHexString()}")
-                    val isLast = session.channel.lastFlag()
+                    val isLast = session.channel!!.lastFlag()
                     val newSubscriptions = ArrayList<SubscriptionHandler>()
                     val responses = sessionHandler.handleRequest(incomingData, newSubscriptions)
-                    session.channel.write(false, responses)
+                    session.channel!!.write(false, responses)
 
                     newSubscriptions.forEach {
                         subscriptions.add(it)
@@ -295,11 +296,9 @@ class MqttSaltServer(
         }
 
         init {
-            channel = QueuedCancellableByteChannel(publisher) {
-                !sessionCancellationToken.get()
-            }
-            session = SaltServerSession(signKeyPair, channel)
-            session.setEncKeyPair(random)
+            channel = QueuedByteChannel(publisher)
+            val encKeyPair = CryptoLib.createEncKeys(random)
+            session = SaltServerSession(signKeyPair, encKeyPair, channel)
             serverMasterJob = scope.async {
                 while (true) {
                     logger.info("Restarting server loop")
