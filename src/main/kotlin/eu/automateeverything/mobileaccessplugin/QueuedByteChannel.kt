@@ -16,20 +16,17 @@
 package eu.automateeverything.mobileaccessplugin
 
 
-import org.slf4j.LoggerFactory
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.isActive
 import saltchannel.ByteChannel
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 class ChannelTerminatedException: Exception("Mqtt channel has been terminated!")
 
-class QueuedCancellableByteChannel(
-    private val writer: (ByteArray) -> Unit,
-    private val activeChecker: () -> Boolean
+class QueuedByteChannel(
+    private val writer: (ByteArray) -> Unit
 ) : ByteChannel {
-
-    private val logger = LoggerFactory.getLogger(QueuedCancellableByteChannel::class.java)
 
     private val queue = LinkedBlockingQueue <ByteArray>()
 
@@ -37,19 +34,15 @@ class QueuedCancellableByteChannel(
         queue.offer(data)
     }
 
-    override fun read(): ByteArray {
-        while (activeChecker.invoke()) {
+    override suspend fun read(): ByteArray = coroutineScope {
+        while (isActive) {
             val bytes =  queue.poll(1, TimeUnit.SECONDS)
             if (bytes != null) {
-                return bytes
+                return@coroutineScope bytes
             }
         }
 
         throw ChannelTerminatedException()
-    }
-
-    override fun write(vararg messages: ByteArray) {
-        write(isLast = false, messages = messages)
     }
 
     override fun write(isLast: Boolean, vararg messages: ByteArray) {
