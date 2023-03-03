@@ -195,7 +195,7 @@ public class SaltClientSession {
     }
     
     private void readM2Bytes() {
-        this.m2Bytes = clearChannel.read("M2");
+        this.m2Bytes = clearChannel.read();
         this.m2Header = V2Util.parseHeader(m2Bytes);
     }
     
@@ -220,7 +220,7 @@ public class SaltClientSession {
     }
     
     private void m3() {
-        this.m3 = M3Packet.fromBytes(encryptedChannel.read("M3"), 0);
+        this.m3 = M3Packet.fromBytes(encryptedChannel.read(), 0);
         this.timeChecker.checkTime(m3.time);
     }
     
@@ -251,7 +251,7 @@ public class SaltClientSession {
         
         encryptedChannel.pushback(this.m2Bytes);
         
-        byte[] bytes = encryptedChannel.read("TT1");
+        byte[] bytes = encryptedChannel.read();
         TTPacket tt = TTPacket.fromBytes(bytes, 0);
         
         this.newTicketData = new ClientTicketData();
@@ -265,7 +265,7 @@ public class SaltClientSession {
      */
     private void tt2() {
         if (m1.ticketRequested && m2.resumeSupported) {
-            byte[] bytes = encryptedChannel.read("TT2");
+            byte[] bytes = encryptedChannel.read();
             tt = TTPacket.fromBytes(bytes, 0);
             newTicketData = new ClientTicketData();
             newTicketData.ticket = tt.ticket;

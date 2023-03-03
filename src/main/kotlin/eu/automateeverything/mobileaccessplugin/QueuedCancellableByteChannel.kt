@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ChannelTerminatedException: Exception("Mqtt channel has been terminated!")
 
 class QueuedCancellableByteChannel(
-    private val cancellationToken: AtomicBoolean,
-    private val writer: (ByteArray) -> Unit
+    private val writer: (ByteArray) -> Unit,
+    private val activeChecker: () -> Boolean
 ) : ByteChannel {
 
     private val logger = LoggerFactory.getLogger(QueuedCancellableByteChannel::class.java)
@@ -37,9 +37,8 @@ class QueuedCancellableByteChannel(
         queue.offer(data)
     }
 
-    override fun read(debugMessage: String): ByteArray {
-        logger.debug("Reading $debugMessage")
-        while (!cancellationToken.get()) {
+    override fun read(): ByteArray {
+        while (activeChecker.invoke()) {
             val bytes =  queue.poll(1, TimeUnit.SECONDS)
             if (bytes != null) {
                 return bytes

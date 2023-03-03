@@ -24,7 +24,7 @@ public interface ByteChannel {
      *          If there is an IO error or data format error in 
      *          the underlying layer.
      */
-    public byte[] read(String debugMessage) throws ComException;
+    public byte[] read() throws ComException;
 
     /**
      * Writes a sequence of non-last application messages to the byte channel.

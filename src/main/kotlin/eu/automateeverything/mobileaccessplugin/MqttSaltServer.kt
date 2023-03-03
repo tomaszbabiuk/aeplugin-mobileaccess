@@ -81,7 +81,7 @@ class MqttSaltServer(
     }
 
 
-    private fun connect() {
+    private suspend fun connect() {
         if (client == null || brokerAddress.host.isEmpty()) {
             logger.info("MQTT broker settings are empty. The plugin won't try to connect.")
             return
@@ -92,13 +92,16 @@ class MqttSaltServer(
             logger.info("Connecting to: ${brokerAddress.host}")
 
             if (brokerAddress.user.isNotEmpty() && brokerAddress.password.isNotEmpty()) {
-                logger.info(" Initial connection")
-                client.connectWith()
-                    .simpleAuth()
-                    .username(brokerAddress.user)
-                    .password(UTF_8.encode(brokerAddress.password))
-                    .applySimpleAuth()
-                    .send()
+                logger.info(" Initial connection - start")
+                withTimeout(10000) {
+                    client.connectWith()
+                        .simpleAuth()
+                        .username(brokerAddress.user)
+                        .password(UTF_8.encode(brokerAddress.password))
+                        .applySimpleAuth()
+                        .send()
+                }
+                logger.info(" Initial connection - stop")
             } else {
                 logger.info("  Reconnection")
                 client.connectWith().send()
@@ -251,9 +254,9 @@ class MqttSaltServer(
                     }
                 } catch (ex: Exception) {
                     logger.error("Unhandled exception while handling subscriptions", ex)
+                    cancel()
                 }
             }
-            println("NOT WORKING!")
         }
 
         private suspend fun serverLoop() = coroutineScope {
@@ -267,7 +270,7 @@ class MqttSaltServer(
                 }
 
                 while (isActive && !sessionCancellationToken.get()) {
-                    val incomingData = session.channel.read("incoming packets")
+                    val incomingData = session.channel.read()
                     logger.debug("Incoming session data ${incomingData.toHexString()}")
                     val isLast = session.channel.lastFlag()
                     val newSubscriptions = ArrayList<SubscriptionHandler>()
@@ -292,7 +295,9 @@ class MqttSaltServer(
         }
 
         init {
-            channel = QueuedCancellableByteChannel(sessionCancellationToken, publisher)
+            channel = QueuedCancellableByteChannel(publisher) {
+                !sessionCancellationToken.get()
+            }
             session = SaltServerSession(signKeyPair, channel)
             session.setEncKeyPair(random)
             serverMasterJob = scope.async {

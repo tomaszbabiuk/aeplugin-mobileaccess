@@ -165,7 +165,7 @@ public class SaltServerSession {
     }
     
     private void readM1() {
-        m1Bytes = clearChannel.read("M1");
+        m1Bytes = clearChannel.read();
         m1Header = V2Util.parseHeader(m1Bytes);
     }
 
@@ -309,7 +309,7 @@ public class SaltServerSession {
     }
     
     private void m4() {
-        this.m4 = M4Packet.fromBytes(encryptedChannel.read("M4"), 0);
+        this.m4 = M4Packet.fromBytes(encryptedChannel.read(), 0);
         this.timeChecker.checkTime(m4.time);
         this.clientSigKey = m4.clientSigKey;
     }
