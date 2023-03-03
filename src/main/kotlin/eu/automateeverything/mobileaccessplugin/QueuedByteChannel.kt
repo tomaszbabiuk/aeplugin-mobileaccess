@@ -16,8 +16,10 @@
 package eu.automateeverything.mobileaccessplugin
 
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import saltchannel.ByteChannel
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -36,7 +38,9 @@ class QueuedByteChannel(
 
     override suspend fun read(): ByteArray = coroutineScope {
         while (isActive) {
-            val bytes =  queue.poll(1, TimeUnit.SECONDS)
+            val bytes = withContext(Dispatchers.IO) {
+                queue.poll(1, TimeUnit.SECONDS)
+            }
             if (bytes != null) {
                 return@coroutineScope bytes
             }

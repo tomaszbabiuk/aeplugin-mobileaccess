@@ -1,5 +1,7 @@
 package saltchannel.v2
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import saltchannel.BadPeer
 import saltchannel.ByteChannel
 import saltchannel.ComException
@@ -46,7 +48,9 @@ class ApplicationChannel(private val channel: ByteChannel, timeKeeper: TimeKeepe
         //
         if (readQ.size > 0) {
             return try {
-                readQ.take()
+                withContext(Dispatchers.IO) {
+                    readQ.take()
+                }
             } catch (e: InterruptedException) {
                 throw Error("should not happen, size is > 0")
             }
