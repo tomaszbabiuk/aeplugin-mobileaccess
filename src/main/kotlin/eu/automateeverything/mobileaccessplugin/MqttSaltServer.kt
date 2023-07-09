@@ -301,9 +301,9 @@ class MqttSaltServer(
             session = SaltServerSession(signKeyPair, encKeyPair, channel)
             serverMasterJob = scope.async {
                 while (true) {
-                    logger.info("Restarting server loop")
+                    logger.info("(Re)starting server loop")
                     serverLoop()
-                    delay(1000)
+                    delay(30000)
                 }
             }
         }
