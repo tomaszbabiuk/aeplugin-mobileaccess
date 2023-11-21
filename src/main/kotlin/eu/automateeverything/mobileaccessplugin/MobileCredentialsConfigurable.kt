@@ -15,26 +15,27 @@
 
 package eu.automateeverything.mobileaccessplugin
 
-import eu.automateeverything.data.Repository
+import eu.automateeverything.data.DataRepository
 import eu.automateeverything.data.instances.InstanceDto
 import eu.automateeverything.data.localization.Resource
 import eu.automateeverything.domain.configurable.*
 import eu.automateeverything.domain.settings.SettingsResolver
+import java.security.SecureRandom
 import org.pf4j.Extension
 import saltchannel.CryptoLib
 import saltchannel.util.Hex
 import saltchannel.util.Rand
-import java.security.SecureRandom
 
 @Extension
 class MobileCredentialsConfigurable(
-    private val repository: Repository,
+    private val dataRepository: DataRepository,
     private val settingsResolver: SettingsResolver
 ) : GeneratedConfigurable() {
 
     override val fieldDefinitions: Map<String, FieldDefinition<*>>
         get() {
-            val result: LinkedHashMap<String, FieldDefinition<*>> = LinkedHashMap(super.fieldDefinitions)
+            val result: LinkedHashMap<String, FieldDefinition<*>> =
+                LinkedHashMap(super.fieldDefinitions)
             result[FIELD_ACTIVATED] = activatedField
             result[FIELD_SERVER_PUB] = serverPubKeyField
             result[FIELD_CLIENT_PUB] = clientPubKeyField
@@ -55,7 +56,8 @@ class MobileCredentialsConfigurable(
     override val descriptionRes = R.mobile_credentials_description
 
     override val iconRaw: String
-        get() = """
+        get() =
+            """
             <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
              <g class="layer">
               <title>Mobile User by TukTuk Design from NounProject.com</title>
@@ -69,20 +71,22 @@ class MobileCredentialsConfigurable(
               </g>
              </g>
             </svg>
-        """.trimIndent()
+        """
+                .trimIndent()
 
     private val qrCodeField = QrCodeField(FIELD_QR_CODE, R.field_invitation_hint, 0, "")
     private val activatedField = BooleanField(FIELD_ACTIVATED, R.field_activated_hint, false)
-    private val serverPubKeyField = StringField(FIELD_SERVER_PUB, R.field_server_public_key, 32,"")
-    private val clientPubKeyField = StringField(FIELD_CLIENT_PUB, R.field_client_public_key, 32,"")
+    private val serverPubKeyField = StringField(FIELD_SERVER_PUB, R.field_server_public_key, 32, "")
+    private val clientPubKeyField = StringField(FIELD_CLIENT_PUB, R.field_client_public_key, 32, "")
 
     override fun generate(): InstanceDto {
         val pluginSettings = settingsResolver.resolve()
-        val secretsPassword:String = if (pluginSettings.size == 1) {
-            pluginSettings[0].fields[SecretsProtectionSettingGroup.FIELD_PASSWORD]!!
-        } else {
-            SecretsProtectionSettingGroup.DEFAULT_PASSWORD
-        }
+        val secretsPassword: String =
+            if (pluginSettings.size == 1) {
+                pluginSettings[0].fields[SecretsProtectionSettingGroup.FIELD_PASSWORD]!!
+            } else {
+                SecretsProtectionSettingGroup.DEFAULT_PASSWORD
+            }
 
         val brokerAddress = BrokerAddress(pluginSettings)
 
@@ -96,11 +100,14 @@ class MobileCredentialsConfigurable(
 
         val nameField = Pair(FIELD_NAME, "#ID: $bindingIdHexString")
         val descriptionField = Pair(FIELD_DESCRIPTION, null)
-        val qrCodeField = Pair(FIELD_QR_CODE, "ae://mobileaccess/connectiondetails" +
-                "?bid=$bindingIdHexString" +
-                "&pub=$pubKeyHexString" +
-                "&broker=${brokerAddress.host},${brokerAddress.port},${brokerAddress.user},${brokerAddress.password}${if (brokerAddress.tlsRequired) ",TLS" else ""}"
-        )
+        val qrCodeField =
+            Pair(
+                FIELD_QR_CODE,
+                "ae://mobileaccess/connectiondetails" +
+                    "?bid=$bindingIdHexString" +
+                    "&pub=$pubKeyHexString" +
+                    "&broker=${brokerAddress.host},${brokerAddress.port},${brokerAddress.user},${brokerAddress.password}${if (brokerAddress.tlsRequired) ",TLS" else ""}"
+            )
         val activatedField = Pair(FIELD_ACTIVATED, false.toString())
         val serverPubKeyField = Pair(FIELD_SERVER_PUB, pubKeyHexString)
         val clientPubKeyField = Pair(FIELD_CLIENT_PUB, "")
@@ -108,9 +115,23 @@ class MobileCredentialsConfigurable(
         val storage = SecretStorage()
         storage.storeSecret(secretsPassword, pubKeyHexString, keyPair.sec())
 
-        val newInstance = InstanceDto(0, null, listOf(), MobileCredentialsConfigurable::class.java.name,
-            mapOf(nameField, descriptionField, qrCodeField, activatedField, serverPubKeyField, clientPubKeyField), null)
-        val newId = repository.saveInstance(newInstance)
+        val newInstance =
+            InstanceDto(
+                0,
+                null,
+                listOf(),
+                MobileCredentialsConfigurable::class.java.name,
+                mapOf(
+                    nameField,
+                    descriptionField,
+                    qrCodeField,
+                    activatedField,
+                    serverPubKeyField,
+                    clientPubKeyField
+                ),
+                null
+            )
+        val newId = dataRepository.saveInstance(newInstance)
         newInstance.id = newId
 
         return newInstance

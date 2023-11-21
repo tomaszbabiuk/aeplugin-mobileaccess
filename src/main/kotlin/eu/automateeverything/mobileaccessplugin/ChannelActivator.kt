@@ -15,30 +15,32 @@
 
 package eu.automateeverything.mobileaccessplugin
 
-import eu.automateeverything.data.Repository
+import eu.automateeverything.data.DataRepository
 import eu.automateeverything.domain.configurable.BooleanFieldBuilder
 import eu.automateeverything.domain.events.EventBus
 import saltchannel.util.Hex
 
-class ChannelActivator(
-    private val repository: Repository,
-    private val eventBus: EventBus)
-{
+class ChannelActivator(private val dataRepository: DataRepository, private val eventBus: EventBus) {
 
     fun activateChannel(serverSignPub: ByteArray, clientSigPub: ByteArray) {
-        val allMobileCredentials = repository.getInstancesOfClazz(MobileCredentialsConfigurable::class.java.name)
+        val allMobileCredentials =
+            dataRepository.getInstancesOfClazz(MobileCredentialsConfigurable::class.java.name)
         val serverPubKeyHex = String(Hex.toHexCharArray(serverSignPub, 0, serverSignPub.size))
         val clientPubKeyHex = String(Hex.toHexCharArray(clientSigPub, 0, clientSigPub.size))
         allMobileCredentials
             .filter { it.fields[MobileCredentialsConfigurable.FIELD_SERVER_PUB] == serverPubKeyHex }
-            .filter { it.fields[MobileCredentialsConfigurable.FIELD_ACTIVATED] == BooleanFieldBuilder.FALSE }
+            .filter {
+                it.fields[MobileCredentialsConfigurable.FIELD_ACTIVATED] ==
+                    BooleanFieldBuilder.FALSE
+            }
             .map {
                 val newFields = it.fields.toMutableMap()
                 newFields[MobileCredentialsConfigurable.FIELD_ACTIVATED] = BooleanFieldBuilder.TRUE
                 newFields[MobileCredentialsConfigurable.FIELD_CLIENT_PUB] = clientPubKeyHex
                 newFields[MobileCredentialsConfigurable.FIELD_QR_CODE] = ""
-                val instanceToUpdate = it.copy(it.id, it.iconId, it.tagIds, it.clazz, newFields, it.automation)
-                repository.updateInstance(instanceToUpdate)
+                val instanceToUpdate =
+                    it.copy(it.id, it.iconId, it.tagIds, it.clazz, newFields, it.automation)
+                dataRepository.updateInstance(instanceToUpdate)
 
                 eventBus.broadcastInstanceUpdateEvent(instanceToUpdate)
             }
